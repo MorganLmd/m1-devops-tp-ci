@@ -4,13 +4,13 @@ commands:
   restore_cache_cmd:
     steps:
       - restore_cache:
-          key: yarn-v2-packages-{{ checksum "yarn.lock" }}
+          key: yarn-v3-packages-{{ checksum "yarn.lock" }}
   save_cache_cmd:
     steps:
       - save_cache:
           paths:
             - ./node_modules
-          key: yarn-v2-packages-{{ checksum "yarn.lock" }}
+          key: yarn-v3-packages-{{ checksum "yarn.lock" }}
 
 jobs:
   build1:
@@ -49,18 +49,16 @@ jobs:
           name: "test unitaires"
       - save_cache_cmd
 
-  database:
+  database1:
     docker:
       - image: "circleci/node:12"
+      - image: "circleci/postgres:9.6.2-alpine"
           environment:
             DATABASE_URL: postgres://psqluer:psqlpassword@localhost:5432/psdb
-            JWT_SECRET: some string yo want
+            JWT_SECRET: some string you want
             API_PORT: 3000
             API_HOST: localhost
             API_PROTOCOL: http
-
-      - image: "circleci/postgres:9.6.2-alpine"
-          environment:
             POSTGRES_USER: psqluer
             POSTGRES_PASSWORD: psqlpassword
             POSTGRES_DB: psdb
@@ -86,7 +84,7 @@ workflows:
           requires:
             - build1
 
-      - database:
+      - database1:
           requires:
             - build1
             - lint1

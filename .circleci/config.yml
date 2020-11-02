@@ -1,27 +1,21 @@
 version: 2.1 
 
-orbs:
-  win: circleci/windows@2.2.0
-
 commands:
   restore_cache_cmd:
     steps:
       - restore_cache:
-        key:
-          npm-v1-dependencies-{{ checksum "yarn.lock" }}
+        key: npm-v1-dependencies-{{ checksum "yarn.lock" }}
   save_cache_cmd:
     steps:
       - save_cache:
         paths:
-          - ~/.m2
+          - ~/.cache/yarn
         key: npm-v1-dependencies-{{ checksum "yarn.lock" }}
-
 
 jobs:
   build:
-    executor:
-      name: win/default
-      size: "medium"
+    docker:
+      image: cimg/node:10.10.1
 
     steps:
 

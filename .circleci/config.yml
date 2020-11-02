@@ -3,6 +3,20 @@ version: 2.1
 orbs:
   win: circleci/windows@2.2.0
 
+commands:
+  restore_cache_cmd:
+    steps:
+      - restore_cache:
+        key:
+          npm-v1-dependencies-{{ checksum "yarn.lock" }}
+  save_cache_cmd:
+    steps:
+      - save_cache:
+        paths:
+          - ~/.m2
+        key: npm-v1-dependencies-{{ checksum "yarn.lock" }}
+
+
 jobs:
   build:
     executor:
@@ -12,4 +26,6 @@ jobs:
     steps:
 
       - checkout
-      - run: Write-Host 'Hello World !!!!'
+      - restore_cache_cmd
+      - run: yarn global add node-gyp && yarn install
+      - save_cache_cmd

@@ -4,13 +4,13 @@ commands:
   restore_cache_cmd:
     steps:
       - restore_cache:
-          key: yarn-v1-packages-{{ checksum "yarn.lock" }}
+          key: yarn-v2-packages-{{ checksum "yarn.lock" }}
   save_cache_cmd:
     steps:
       - save_cache:
           paths:
             - ./node_modules
-          key: yarn-v1-packages-{{ checksum "yarn.lock" }}
+          key: yarn-v2-packages-{{ checksum "yarn.lock" }}
 
 jobs:
   build1:

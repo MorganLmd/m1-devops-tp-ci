@@ -49,6 +49,30 @@ jobs:
           name: "test unitaires"
       - save_cache_cmd
 
+  database:
+    docker:
+      - image: "circleci/node:12"
+          environment:
+            DATABASE_URL: postgres://psqluer:psqlpassword@localhost:5432/psdb
+            JWT_SECRET: some string yo want
+            API_PORT: 3000
+            API_HOST: localhost
+            API_PROTOCOL: http
+
+      - image: "circleci/postgres:9.6.2-alpine"
+          environment:
+            POSTGRES_USER: psqluer
+            POSTGRES_PASSWORD: psqlpassword
+            POSTGRES_DB: psdb
+
+    steps:
+      - checkout
+      - restore_cache_cmd
+      - run:
+          command: "yarn test:e2e"
+          name: "test end 2 end db postgres"
+      - save_cache_cmd
+        
 workflows:
   version: 2
 
@@ -61,4 +85,9 @@ workflows:
       - unit1:
           requires:
             - build1
+
+      - database:
+          requires:
+            - build1
             - lint1
+            - unit1

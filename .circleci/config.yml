@@ -1,26 +1,64 @@
-version: 2.1 
+version: 2.1
 
 commands:
-    restore_cache_cmd:
-      steps:
-        - restore_cache:
-            key: yarn-v1-packages-{{ checksum "yarn.lock" }}
-    save_cache_cmd:
-      steps:
-        - save_cache:
-            paths:
-              - ./node_modules
-            key: yarn-v1-packages-{{ checksum "yarn.lock" }}
+  restore_cache_cmd:
+    steps:
+      - restore_cache:
+          key: yarn-v1-packages-{{ checksum "yarn.lock" }}
+  save_cache_cmd:
+    steps:
+      - save_cache:
+          paths:
+            - ./node_modules
+          key: yarn-v1-packages-{{ checksum "yarn.lock" }}
 
 jobs:
-  build:
+  build1:
     docker:
       - image: "circleci/node:12"
 
     steps:
       - checkout
       - restore_cache_cmd
-      - run: 
+      - run:
           command: "yarn global add node-gyp && yarn install"
           name: "installation"
       - save_cache_cmd
+
+  lint1:
+    docker:
+      - image: "circleci/node:12"
+
+    steps:
+      - checkout
+      - restore_cache_cmd
+      - run:
+          command: "yarn lint && yarn format:check"
+          name: "lint and format check"
+      - save_cache_cmd
+
+  unit1:
+    docker:
+      - image: "circleci/node:12"
+
+    steps:
+      - checkout
+      - restore_cache_cmd
+      - run:
+          command: "yarn test:ci"
+          name: "test unitaires"
+      - save_cache_cmd
+
+workflows:
+  version: 2
+
+  test_workflow:
+    jobs:
+      - build1
+      - lint1:
+          requires:
+            - build1
+      - unit1:
+          requires:
+            - build1
+            - lint1

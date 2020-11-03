@@ -1,5 +1,6 @@
 version: 2.1
 
+# global cache commands to avoid repetitions
 commands:
   restore_cache_cmd:
     steps:
@@ -13,7 +14,7 @@ commands:
           key: yarn-v3-packages-{{ checksum "yarn.lock" }}
 
 jobs:
-  build1:
+  build:
     docker:
       - image: "circleci/node:12"
 
@@ -25,7 +26,7 @@ jobs:
           name: "installation"
       - save_cache_cmd
 
-  lint1:
+  lint:
     docker:
       - image: "circleci/node:12"
 
@@ -37,7 +38,7 @@ jobs:
           name: "lint and format check"
       - save_cache_cmd
 
-  unit1:
+  unit-tests:
     docker:
       - image: "circleci/node:12"
 
@@ -49,7 +50,8 @@ jobs:
           name: "test unitaires"
       - save_cache_cmd
 
-  database1:
+
+  database:
     docker:
       - image: "circleci/node:12"
         environment:
@@ -73,21 +75,34 @@ jobs:
           name: "test end 2 end db postgres"
       - save_cache_cmd
 
+  documentation:
+    docker:
+      - image: "circleci/node:12"
+    steps:
+      - checkout
+      - restore_cache_cmd
+      - run:
+          command: yarn doc:build
+          name: creation de la doc
+      - store_artifacts:
+          path: ./doc-server
+      - save_cache_cmd
+
 workflows:
   version: 2
 
   test_workflow:
     jobs:
-      - build1
-      - lint1:
+      - build
+      - lint:
           requires:
-            - build1
-      - unit1:
+            - build
+      - unit-tests:
           requires:
-            - build1
-
-      - database1:
+            - build
+      - database:
           requires:
-            - build1
-            - lint1
-            - unit1
+            - build
+      - documentation
+          requires:
+            - build

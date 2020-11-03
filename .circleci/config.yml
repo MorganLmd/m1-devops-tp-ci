@@ -103,6 +103,6 @@ workflows:
       - database:
           requires:
             - build
-      - documentation
+      - documentation:
           requires:
             - build

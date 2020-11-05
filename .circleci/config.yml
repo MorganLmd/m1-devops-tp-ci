@@ -18,7 +18,7 @@ executors:
       IMAGE_NAME: morganlmd/my-awesome-ci-expr
       IMAGE_NAME_TMP: app
     docker:
-      - circleci/buildpack-deps:stretch
+      - image: circleci/buildpack-deps:stretch
 
 jobs:
   build:

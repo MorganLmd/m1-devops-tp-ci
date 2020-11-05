@@ -10,7 +10,7 @@ commands:
       - save_cache:
           paths:
             - ./node_modules
-          key: yarn-v3-packages-{{ checksum "yarn.lock" }}
+          key: yarn-v5-packages-{{ checksum "yarn.lock" }}
 
 executors:
   dockerhub-publisher:

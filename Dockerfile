@@ -1,4 +1,3 @@
-# dockerhub : morganlmd/my-awesome-ci-expr:latest
 FROM node:12
 
 WORKDIR /usr/src/app

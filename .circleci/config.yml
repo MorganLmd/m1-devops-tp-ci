@@ -1,17 +1,24 @@
 version: 2.1
 
-# global cache commands to avoid repetitions
 commands:
   restore_cache_cmd:
     steps:
       - restore_cache:
-          key: yarn-v3-packages-{{ checksum "yarn.lock" }}
+          key: yarn-v4-packages-{{ checksum "yarn.lock" }}
   save_cache_cmd:
     steps:
       - save_cache:
           paths:
             - ./node_modules
           key: yarn-v3-packages-{{ checksum "yarn.lock" }}
+
+executors:
+  dockerhub-publisher:
+    environment:
+      IMAGE_NAME: morganlmd/my-awesome-ci-expr
+      IMAGE_NAME_TMP: app
+    docker:
+      - circleci/buildpack-deps:stretch
 
 jobs:
   build:
@@ -75,6 +82,46 @@ jobs:
           name: "test end 2 end db postgres"
       - save_cache_cmd
 
+  docker-build:
+    executor: dockerhub-publisher
+    steps:
+      - checkout
+      - restore_cache_cmd
+      - setup_remote_docker
+      - run:
+          name: build docker image
+          command: |
+            docker build -t $IMAGE_NAME_TMP .
+      - run:
+          name: Archive docker image
+          command: docker save -o image.tar $IMAGE_NAME_TMP
+      - persist_to_workspace:
+          root: .
+          paths:
+            - ./image.tar
+      - save_cache_cmd
+
+  dockerhub-publishing:
+    executor: dockerhub-publisher
+    steps:
+      - restore_cache_cmd
+      - attach_workspace:
+          at: /tmp/workspace
+      - setup_remote_docker
+      - run:
+          name: load archived docker image
+          command: docker load -i /tmp/workspace/image.tar
+      - run:
+          name: publish docker image to dockerhub
+          command: |
+            echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+            IMAGE_TAG="0.0.${CIRCLE_TAG/v/''}"
+            docker tag $IMAGE_NAME_TMP $IMAGE_NAME:latest
+            docker tag $IMAGE_NAME:latest $IMAGE_NAME:$IMAGE_TAG
+            docker push $IMAGE_NAME:latest
+            docker push $IMAGE_NAME:$IMAGE_TAG
+      - save_cache_cmd
+
   documentation:
     docker:
       - image: "circleci/node:12"
@@ -84,14 +131,13 @@ jobs:
       - run:
           command: yarn doc:build
           name: creation de la doc
-      - store_artifacts:
+      - store_artifacts: 
           path: ./doc-server
       - save_cache_cmd
 
 workflows:
   version: 2
-
-  test_workflow:
+  test-workflow:
     jobs:
       - build
       - lint:
@@ -103,6 +149,45 @@ workflows:
       - database:
           requires:
             - build
+      - docker-build:
+          requires:
+            - build
+            - lint
+            - unit-tests
+          context:
+            - FGES
+          filters:
+            branches:
+              only: main
+      - dockerhub-publishing:
+          requires: 
+            - build
+            - lint
+            - unit-tests
+            - docker-build
+          context:
+            - FGES
+          filters:
+            branches:
+              only: main
       - documentation:
           requires:
             - build
+            - lint
+            - unit-tests
+  build-tags:
+    jobs:
+      - build:
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
+      - publish-tag:
+          requires:
+            - build
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/

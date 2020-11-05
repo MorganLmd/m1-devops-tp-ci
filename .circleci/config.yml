@@ -4,7 +4,7 @@ commands:
   restore_cache_cmd:
     steps:
       - restore_cache:
-          key: yarn-v4-packages-{{ checksum "yarn.lock" }}
+          key: yarn-v5-packages-{{ checksum "yarn.lock" }}
   save_cache_cmd:
     steps:
       - save_cache:
